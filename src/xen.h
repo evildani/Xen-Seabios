@@ -516,6 +516,57 @@ struct xenstore_domain_interface {
     XENSTORE_RING_IDX rsp_cons, rsp_prod;
 };
 
+/******************************************************************************
+ * memory.h
+ *
+ * Memory reservation and information.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ *
+ * Copyright (c) 2005, Keir Fraser <keir@xensource.com>
+ */
+/*
+ * Sets the GPFN at which a particular page appears in the specified guest's
+ * pseudophysical address space.
+ * arg == addr of xen_add_to_physmap_t.
+ */
+#define XENMEM_add_to_physmap      7
+struct xen_add_to_physmap {
+    /* Which domain to change the mapping for. */
+    u64 domid;
+
+    /* Source mapping space. */
+#define XENMAPSPACE_shared_info 0 /* shared info page */
+#define XENMAPSPACE_grant_table 1 /* grant table page */
+#define XENMAPSPACE_gmfn        2 /* GMFN */
+    unsigned int space;
+
+#define XENMAPIDX_grant_table_status 0x80000000
+
+    /* Index into source mapping space. */
+    xen_ulong_t idx;
+
+    /* GPFN where the source mapping page should appear. */
+    xen_pfn_t     gpfn;
+};
+typedef struct xen_add_to_physmap xen_add_to_physmap_t;
+DEFINE_XEN_GUEST_HANDLE(xen_add_to_physmap_t);
 
 
 /*
