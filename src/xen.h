@@ -453,9 +453,7 @@ struct xen_hvm_param {
      struct arch_shared_info arch;
 
  };
- #ifndef __XEN__
  typedef struct shared_info shared_info_t;
- #endif
 
  inline int test_and_clear_bit(int nr, volatile void *addr);
 
@@ -676,6 +674,26 @@ struct xenstore_domain_interface {
     XENSTORE_RING_IDX rsp_cons, rsp_prod;
 };
 
+#define XSD_ERROR(x) { x, #x }
+/* LINTED: static unused */
+static struct xsd_errors xsd_errors[]
+    = {
+    XSD_ERROR(EINVAL),
+    XSD_ERROR(EACCES),
+    XSD_ERROR(EEXIST),
+    XSD_ERROR(EISDIR),
+    XSD_ERROR(ENOENT),
+    XSD_ERROR(ENOMEM),
+    XSD_ERROR(ENOSPC),
+    XSD_ERROR(EIO),
+    XSD_ERROR(ENOTEMPTY),
+    XSD_ERROR(ENOSYS),
+    XSD_ERROR(EROFS),
+    XSD_ERROR(EBUSY),
+    XSD_ERROR(EAGAIN),
+    XSD_ERROR(EISCONN)
+};
+
 /******************************************************************************
  * memory.h
  *
@@ -745,7 +763,6 @@ static inline int
 hypercall_event_channel_op(
         int cmd, void *arg)
 {
-		dprintf(1,"Hypercall!!!!\n");
         return _hypercall2(int, event_channel_op ,cmd, arg);
 }
 
