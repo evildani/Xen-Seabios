@@ -238,22 +238,6 @@ hypercall_sched_op(
 #define XENVER_extraversion 1
 typedef char xen_extraversion_t[16];
 #define XEN_EXTRAVERSION_LEN (sizeof(xen_extraversion_t))
-/* Guest handles for primitive C types. */
-DEFINE_XEN_GUEST_HANDLE(char);
-__DEFINE_XEN_GUEST_HANDLE(uchar, unsigned char);
-DEFINE_XEN_GUEST_HANDLE(int);
-__DEFINE_XEN_GUEST_HANDLE(uint,  unsigned int);
-DEFINE_XEN_GUEST_HANDLE(long);
-__DEFINE_XEN_GUEST_HANDLE(ulong, unsigned long);
-DEFINE_XEN_GUEST_HANDLE(void);
-
-DEFINE_XEN_GUEST_HANDLE(u64);
-DEFINE_XEN_GUEST_HANDLE(xen_pfn_t);
-
-__DEFINE_XEN_GUEST_HANDLE(u8,  u8);
-__DEFINE_XEN_GUEST_HANDLE(u16, u16);
-__DEFINE_XEN_GUEST_HANDLE(u32, u32);
-//__DEFINE_XEN_GUEST_HANDLE(u64, u64);
 
 /******************************************************************************
  * xen.h
@@ -281,7 +265,24 @@ __DEFINE_XEN_GUEST_HANDLE(u32, u32);
  * Copyright (c) 2004, K A Fraser
  */
 
+#define DOMID_SELF  (0x7FF0U)
 
+/* Guest handles for primitive C types. */
+DEFINE_XEN_GUEST_HANDLE(char);
+__DEFINE_XEN_GUEST_HANDLE(uchar, unsigned char);
+DEFINE_XEN_GUEST_HANDLE(int);
+__DEFINE_XEN_GUEST_HANDLE(uint,  unsigned int);
+DEFINE_XEN_GUEST_HANDLE(long);
+__DEFINE_XEN_GUEST_HANDLE(ulong, unsigned long);
+DEFINE_XEN_GUEST_HANDLE(void);
+
+DEFINE_XEN_GUEST_HANDLE(u64);
+DEFINE_XEN_GUEST_HANDLE(xen_pfn_t);
+
+__DEFINE_XEN_GUEST_HANDLE(u8,  u8);
+__DEFINE_XEN_GUEST_HANDLE(u16, u16);
+__DEFINE_XEN_GUEST_HANDLE(u32, u32);
+//__DEFINE_XEN_GUEST_HANDLE(u64, u64);
 
 #define __HYPERVISOR_memory_op            12
 #define __HYPERVISOR_xen_version          17
@@ -361,6 +362,105 @@ struct xen_hvm_param {
     u32 index;    //IN
     u64 value;    //IN/OUT
 };
+
+ /******************************************************************************
+  * arch-x86/xen.h
+  *
+  * Guest OS interface to x86 Xen.
+  *
+  * Permission is hereby granted, free of charge, to any person obtaining a copy
+  * of this software and associated documentation files (the "Software"), to
+  * deal in the Software without restriction, including without limitation the
+  * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+  * sell copies of the Software, and to permit persons to whom the Software is
+  * furnished to do so, subject to the following conditions:
+  *
+  * The above copyright notice and this permission notice shall be included in
+  * all copies or substantial portions of the Software.
+  *
+  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+  * DEALINGS IN THE SOFTWARE.
+  *
+  * Copyright (c) 2004-2006, K A Fraser
+  */
+
+ struct arch_shared_info {
+     unsigned long max_pfn;                  /* max pfn that appears in table */
+     /* Frame containing list of mfns containing list of mfns containing p2m. */
+     xen_pfn_t     pfn_to_mfn_frame_list_list;
+     unsigned long nmi_reason;
+     u64 pad[32];
+ };
+ typedef struct arch_shared_info arch_shared_info_t;
+
+ struct arch_vcpu_info {
+     unsigned long cr2;
+     unsigned long pad[5]; /* sizeof(vcpu_info_t) == 64 */
+ };
+ typedef struct arch_vcpu_info arch_vcpu_info_t;
+
+ struct vcpu_time_info {
+     /*
+      * Updates to the following values are preceded and followed by an
+      * increment of 'version'. The guest can therefore detect updates by
+      * looking for changes to 'version'. If the least-significant bit of
+      * the version number is set then an update is in progress and the guest
+      * must wait to read a consistent set of values.
+      * The correct way to interact with the version number is similar to
+      * Linux's seqlock: see the implementations of read_seqbegin/read_seqretry.
+      */
+     u32 version;
+     u32 pad0;
+     u64 tsc_timestamp;   /* TSC at last update of time vals.  */
+     u64 system_time;     /* Time, in nanosecs, since boot.    */
+     /*
+      * Current system time:
+      *   system_time +
+      *   ((((tsc - tsc_timestamp) << tsc_shift) * tsc_to_system_mul) >> 32)
+      * CPU frequency (Hz):
+      *   ((10^9 << 32) / tsc_to_system_mul) >> tsc_shift
+      */
+     u32 tsc_to_system_mul;
+     u8   tsc_shift;
+     u8   pad1[3];
+ }; /* 32 bytes */
+ typedef struct vcpu_time_info vcpu_time_info_t;
+
+
+ struct vcpu_info {
+     u8 evtchn_upcall_pending;
+     u8 evtchn_upcall_mask;
+     unsigned long evtchn_pending_sel;
+     struct arch_vcpu_info arch;
+     struct vcpu_time_info time;
+ };  /*64 bytes (x86)*/
+
+ #define XEN_LEGACY_MAX_VCPUS 32
+
+ struct shared_info {
+     struct vcpu_info vcpu_info[XEN_LEGACY_MAX_VCPUS];
+     unsigned long evtchn_pending[sizeof(unsigned long) * 8];
+     unsigned long evtchn_mask[sizeof(unsigned long) * 8];
+     u32 wc_version;      /* Version counter: see vcpu_time_info_t. */
+     u32 wc_sec;          /* Secs  00:00:00 UTC, Jan 1, 1970.  */
+     u32 wc_nsec;         /* Nsecs 00:00:00 UTC, Jan 1, 1970.  */
+
+     struct arch_shared_info arch;
+
+ };
+ #ifndef __XEN__
+ typedef struct shared_info shared_info_t;
+ #endif
+
+ inline int test_and_clear_bit(int nr, volatile void *addr);
+
+
+ struct shared_info *get_shared_info(void);
 
 /******************************************************************************
  * event_channel.h
