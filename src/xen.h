@@ -17,6 +17,9 @@ static inline int usingXen(void) {
     return (xen_cpuid_base != 0);
 }
 
+typedef unsigned long xen_ulong_t;
+typedef unsigned long xen_pfn_t;
+
 unsigned long xen_hypercall_page;
 
 #define _hypercall0(type, name)                                         \
@@ -161,6 +164,50 @@ hypercall_sched_op(
  */
 
 /******************************************************************************
+ * arch-x86/xen.h
+ *
+ * Guest OS interface to x86 Xen.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ *
+ * Copyright (c) 2004-2006, K A Fraser
+ */
+
+
+/* Structural guest handles introduced in 0x00030201. */
+#define ___DEFINE_XEN_GUEST_HANDLE(name, type) \
+    typedef struct { type *p; } __guest_handle_ ## name
+
+#define __DEFINE_XEN_GUEST_HANDLE(name, type) \
+    ___DEFINE_XEN_GUEST_HANDLE(name, type);   \
+    ___DEFINE_XEN_GUEST_HANDLE(const_##name, const type)
+#define DEFINE_XEN_GUEST_HANDLE(name)   __DEFINE_XEN_GUEST_HANDLE(name, name)
+#define __XEN_GUEST_HANDLE(name)        __guest_handle_ ## name
+#define XEN_GUEST_HANDLE(name)          __XEN_GUEST_HANDLE(name)
+#define set_xen_guest_handle_raw(hnd, val)  do { (hnd).p = val; } while (0)
+#ifdef __XEN_TOOLS__
+#define get_xen_guest_handle(val, hnd)  do { val = (hnd).p; } while (0)
+#endif
+#define set_xen_guest_handle(hnd, val) set_xen_guest_handle_raw(hnd, val)
+
+
+/******************************************************************************
  * version.h
  *
  * Xen version, type, and compile information.
@@ -191,6 +238,22 @@ hypercall_sched_op(
 #define XENVER_extraversion 1
 typedef char xen_extraversion_t[16];
 #define XEN_EXTRAVERSION_LEN (sizeof(xen_extraversion_t))
+/* Guest handles for primitive C types. */
+DEFINE_XEN_GUEST_HANDLE(char);
+__DEFINE_XEN_GUEST_HANDLE(uchar, unsigned char);
+DEFINE_XEN_GUEST_HANDLE(int);
+__DEFINE_XEN_GUEST_HANDLE(uint,  unsigned int);
+DEFINE_XEN_GUEST_HANDLE(long);
+__DEFINE_XEN_GUEST_HANDLE(ulong, unsigned long);
+DEFINE_XEN_GUEST_HANDLE(void);
+
+DEFINE_XEN_GUEST_HANDLE(u64);
+DEFINE_XEN_GUEST_HANDLE(xen_pfn_t);
+
+__DEFINE_XEN_GUEST_HANDLE(u8,  u8);
+__DEFINE_XEN_GUEST_HANDLE(u16, u16);
+__DEFINE_XEN_GUEST_HANDLE(u32, u32);
+//__DEFINE_XEN_GUEST_HANDLE(u64, u64);
 
 /******************************************************************************
  * xen.h
