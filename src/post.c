@@ -192,6 +192,7 @@ init_hw(void)
     ramdisk_setup();
     virtio_blk_setup();
     xenbus_setup();
+    test_xenstore();
 }
 
 // Begin the boot process by invoking an int0x19 in 16bit mode.

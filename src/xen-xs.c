@@ -239,3 +239,19 @@ int xenbus_send(u32 type, u32 len, char *data,
     /* We know xenbus_send() nul-terminates its answer, so just pass it on. */
     return answer;
 }
+
+ /*
+  * This function reads domU related entries from the xenstore
+  * For now we print them on console using dprintf 1
+  */
+ int test_xenstore(void){
+ 	int ret;
+ 	char test[11] = {'d','e','v','i','c','e','/','v','b','d','\0'};
+ 	char * replay_data = malloc_high(1024);
+ 	memset(replay_data,0,1024);
+ 	replay_data[1023] = '\0';
+ 	u32 replay_len = 0;
+ 	ret = xenbus_send(XS_DIRECTORY	,strlen(test)+1,test,&replay_len,&replay_data);
+ 	dprintf(1,"Xenbus return is: %d\n Response is device vbd-id: %s \n",ret,replay_data);
+ 	return 0;
+ }
