@@ -2,6 +2,7 @@
 #define __XEN_H
 
 #include "util.h"
+#include "config.h"
 
 extern u32 xen_cpuid_base;
 
@@ -97,6 +98,44 @@ unsigned long xen_hypercall_page;
     (type)__res;                                                        \
 })
 
+/*
+ * -----------------------------------------------------
+ * Wrappers for hypercalls
+ */
+static inline int
+ hypercall_hvm_op(
+         int cmd, void *arg);
+ static inline int
+ hypercall_event_channel_op(
+         int cmd, void *arg);
+ static inline int
+ hypercall_memory_op(
+         int cmd ,void *arg);
+ static inline int
+ hypercall_grant_table_op(
+ 		int cmd, void *arg, unsigned int count);
+ static inline int
+ hypercall_sched_op(
+         int cmd, void *arg);
+static inline int
+hypercall_hvm_op(
+        int cmd, void *arg);
+static inline int
+hypercall_event_channel_op(
+        int cmd, void *arg);
+static inline int
+hypercall_memory_op(
+        int cmd ,void *arg);
+
+static inline int
+hypercall_grant_table_op(
+		int cmd, void *arg, unsigned int count);
+static inline int
+hypercall_sched_op(
+        int cmd, void *arg);
+
+
+
 /******************************************************************************
  *
  * The following interface definitions are taken from Xen and have the
@@ -131,5 +170,95 @@ unsigned long xen_hypercall_page;
 #define XENVER_extraversion 1
 typedef char xen_extraversion_t[16];
 #define XEN_EXTRAVERSION_LEN (sizeof(xen_extraversion_t))
+
+/******************************************************************************
+ * xen.h
+ *
+ * Guest OS interface to Xen.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ *
+ * Copyright (c) 2004, K A Fraser
+ */
+
+
+
+#define __HYPERVISOR_memory_op            12
+#define __HYPERVISOR_xen_version          17
+#define __HYPERVISOR_grant_table_op       20
+#define __HYPERVISOR_xsm_op               27
+#define __HYPERVISOR_event_channel_op     32
+#define __HYPERVISOR_hvm_op               34
+#define __HYPERVISOR_sched_op             29
+
+
+/* Architecture-specific hypercall definitions. */
+#define __HYPERVISOR_arch_0               48
+#define __HYPERVISOR_arch_1               49
+#define __HYPERVISOR_arch_2               50
+#define __HYPERVISOR_arch_3               51
+#define __HYPERVISOR_arch_4               52
+#define __HYPERVISOR_arch_5               53
+#define __HYPERVISOR_arch_6               54
+#define __HYPERVISOR_arch_7               55
+
+
+/*
+ * wrappers
+ */
+static inline int
+hypercall_hvm_op(
+        int cmd, void *arg)
+{
+		int ret;
+		ret = _hypercall2(int,hvm_op, cmd, arg);
+        return ret;
+}
+
+static inline int
+hypercall_event_channel_op(
+        int cmd, void *arg)
+{
+		dprintf(1,"Hypercall!!!!\n");
+        return _hypercall2(int, event_channel_op ,cmd, arg);
+}
+
+static inline int
+hypercall_memory_op(
+        int cmd ,void *arg)
+{
+        return _hypercall2(int, memory_op, cmd ,arg);
+}
+
+static inline int
+hypercall_grant_table_op(
+		int cmd, void *arg, unsigned int count)
+{
+	return _hypercall3(int,grant_table_op,cmd,arg, count);
+}
+
+static inline int
+hypercall_sched_op(
+        int cmd, void *arg)
+{
+        return _hypercall2(int, sched_op, cmd, arg);
+}
+
 
 #endif
